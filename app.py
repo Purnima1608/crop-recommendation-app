@@ -383,21 +383,21 @@ def dual_input(label, key, min_v, max_v, default):
 # ==============================
 st.subheader(texts[lang]["soil"])
 
-N = dual_input(texts[lang]["nitrogen"], "N", 0.0, 200.0, 50.0)
-P = dual_input(texts[lang]["phosphorus"], "P", 0.0, 200.0, 50.0)
-K = dual_input(texts[lang]["potassium"], "K", 0.0, 200.0, 50.0)
+N = dual_input(texts[lang]["nitrogen"], "N", 0.0, 140.0, 20.0)
+P = dual_input(texts[lang]["phosphorus"], "P", 0.0, 60.0, 20.0)
+K = dual_input(texts[lang]["potassium"], "K", 0.0, 205.0, 5.0)
 
 Zinc = dual_input(texts[lang]["zinc"], "Zn", 1.0, 5.0, 3.0)
-Iron = dual_input(texts[lang]["iron"], "Fe", 10.0, 30.0, 20.0)
+Iron = dual_input(texts[lang]["iron"], "Fe", 1.0, 30.0, 20.0)
 Boron = dual_input(texts[lang]["boron"], "B", 0.2, 2.0, 1.0)
-Manganese = dual_input(texts[lang]["manganese"], "Mn", 5.0, 20.0, 12.0)
+Manganese = dual_input(texts[lang]["manganese"], "Mn", 2.0, 20.0, 12.0)
 Copper = dual_input(texts[lang]["copper"], "Cu", 0.1, 2.0, 1.0)
 
 st.subheader(texts[lang]["weather"])
 
-pH = dual_input(texts[lang]["ph"], "pH", 0.0, 14.0, 7.0)
+pH = dual_input(texts[lang]["ph"], "pH", 0.0, 10.0, 4.0)
 Temp = dual_input(texts[lang]["temp"], "Temp", 0.0, 50.0, 25.0)
-Rain = dual_input(texts[lang]["rain"], "Rain", 0.0, 500.0, 100.0)
+Rain = dual_input(texts[lang]["rain"], "Rain", 0.0, 2500.0, 200.0)
 Hum = dual_input(texts[lang]["humidity"], "Hum", 0.0, 100.0, 50.0)
 
 # ==============================
