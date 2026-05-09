@@ -317,10 +317,7 @@ if os.path.exists(log_file):
 
             ax.pie(
                 [correct, wrong],
-                labels=[
-                    texts[lang]["correct"],
-                    texts[lang]["incorrect"]
-                ],
+                labels=["Correct", "Wrong"],
                 autopct="%1.1f%%",
                 colors=["green", "red"],
                 wedgeprops={'edgecolor': 'white'}
