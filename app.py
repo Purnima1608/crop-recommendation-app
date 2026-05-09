@@ -292,15 +292,26 @@ if os.path.exists(log_file):
     # RIGHT SIDE → Pie Chart
     with col2:
         fig, ax = plt.subplots(figsize=(3,3))
-        ax.pie(
-            [correct, wrong],
-            labels=[texts[lang]["correct"], texts[lang]["incorrect"]],
-            autopct="%1.1f%%" , 
-            colors=["green", "red"],
-            wedgeprops={'edgecolor': 'white'}
-        )
-        st.pyplot(fig)
 
+# Prevent pie chart error when values are zero
+if correct == 0 and wrong == 0:
+    ax.text(0.5, 0.5, "No Feedback Data",
+            ha='center',
+            va='center',
+            fontsize=12)
+
+    ax.axis('off')
+
+else:
+    ax.pie(
+        [correct, wrong],
+        labels=[texts[lang]["correct"], texts[lang]["incorrect"]],
+        autopct="%1.1f%%",
+        colors=["green", "red"],
+        wedgeprops={'edgecolor': 'white'}
+    )
+
+st.pyplot(fig)
 else:
     st.info("No data yet")
 
