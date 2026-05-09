@@ -335,38 +335,46 @@ else:
 # ==============================
 def dual_input(label, key, min_v, max_v, default):
 
-    # Initialize session state (ONLY once)
-    if f"{key}" not in st.session_state:
+    # Main session value
+    if key not in st.session_state:
         st.session_state[key] = default
 
-    # When slider changes → update main value
-    def update_from_slider():
-        st.session_state[key] = st.session_state[f"{key}_slider"]
+    # Slider session
+    if f"{key}_slider" not in st.session_state:
+        st.session_state[f"{key}_slider"] = default
 
-    # When textbox changes → update main value
-    def update_from_input():
+    # Input session
+    if f"{key}_input" not in st.session_state:
+        st.session_state[f"{key}_input"] = default
+
+    # When slider changes
+    def sync_from_slider():
+        st.session_state[key] = st.session_state[f"{key}_slider"]
+        st.session_state[f"{key}_input"] = st.session_state[f"{key}_slider"]
+
+    # When textbox changes
+    def sync_from_input():
         st.session_state[key] = st.session_state[f"{key}_input"]
+        st.session_state[f"{key}_slider"] = st.session_state[f"{key}_input"]
 
     col1, col2 = st.columns([2,1])
 
-    # SLIDER
+    # Slider
     col1.slider(
         label,
         min_v,
         max_v,
-        st.session_state[key],
         key=f"{key}_slider",
-        on_change=update_from_slider
+        on_change=sync_from_slider
     )
 
-    # NUMBER INPUT
+    # Textbox
     col2.number_input(
         "",
         min_v,
         max_v,
-        st.session_state[key],
         key=f"{key}_input",
-        on_change=update_from_input
+        on_change=sync_from_input
     )
 
     return st.session_state[key]
