@@ -411,20 +411,28 @@ if st.button(texts[lang]["button"]):
 
     perc_values = [round(p,1) for p in percentages]
 
-    fig, ax = plt.subplots(figsize=(9,4))
+   # ==============================
+# GRAPH
+# ==============================
+fig, ax = plt.subplots(figsize=(9, 4))
 
-    ax.barh(
-        crop_names,
-        perc_values,
-        color=["green","blue","orange"]
-    )
+bars = ax.barh(
+    crop_names,
+    perc_values,
+    color=["green", "blue", "orange"]
+)
 
-    # ax.set_xlabel("Confidence (%)")
+# Title
+ax.set_title("Top Crop Recommendations", fontsize=16)
 
-    ax.set_title("Top Crop Recommendations", fontsize=16)
-    ax.set_xlim(0, 110)
+# X Label
+ax.set_xlabel("Confidence (%)", fontsize=12)
 
-    for i, v in enumerate(perc_values):
+# Limit graph width
+ax.set_xlim(0, 110)
+
+# Add percentage labels INSIDE graph
+for i, v in enumerate(perc_values):
 
     ax.text(
         min(v + 1, 102),   # prevent overflow
@@ -435,9 +443,16 @@ if st.button(texts[lang]["button"]):
         fontweight='bold'
     )
 
-    ax.invert_yaxis()
+# Highest recommendation on top
+ax.invert_yaxis()
 
-    st.pyplot(fig)
+# Improve Hindi/Gujarati visibility
+plt.tight_layout()
+
+# Extra left spacing for regional language text
+plt.subplots_adjust(left=0.28)
+
+st.pyplot(fig)
 
     # ==============================
     # SAVE TO GOOGLE SHEET
