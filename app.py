@@ -457,7 +457,7 @@ st.pyplot(fig)
     # ==============================
     # SAVE TO GOOGLE SHEET
     # ==============================
-    save_data = {
+save_data = {
 
         "User_ID": user_id,
         "Nitrogen": N,
