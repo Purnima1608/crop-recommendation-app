@@ -411,53 +411,29 @@ if st.button(texts[lang]["button"]):
 
     perc_values = [round(p,1) for p in percentages]
 
-   # ==============================
-# GRAPH
-# ==============================
-fig, ax = plt.subplots(figsize=(9, 4))
+    fig, ax = plt.subplots(figsize=(10,4))
 
-bars = ax.barh(
-    crop_names,
-    perc_values,
-    color=["green", "blue", "orange"]
-)
-
-# Title
-ax.set_title("Top Crop Recommendations", fontsize=16)
-
-# X Label
-ax.set_xlabel("Confidence (%)", fontsize=12)
-
-# Limit graph width
-ax.set_xlim(0, 110)
-
-# Add percentage labels INSIDE graph
-for i, v in enumerate(perc_values):
-
-    ax.text(
-        min(v + 1, 102),   # prevent overflow
-        i,
-        f"{v:.1f}%",
-        va='center',
-        fontsize=11,
-        fontweight='bold'
+    ax.barh(
+        crop_names,
+        perc_values,
+        color=["green","blue","orange"]
     )
 
-# Highest recommendation on top
-ax.invert_yaxis()
+    ax.set_xlabel("Confidence (%)")
 
-# Improve Hindi/Gujarati visibility
-plt.tight_layout()
+    ax.set_title("Top Crop Recommendations")
 
-# Extra left spacing for regional language text
-plt.subplots_adjust(left=0.28)
+    for i, v in enumerate(perc_values):
+        ax.text(v + 2, i, f"{v}%", va='center')
 
-st.pyplot(fig)
+    ax.invert_yaxis()
+
+    st.pyplot(fig)
 
     # ==============================
     # SAVE TO GOOGLE SHEET
     # ==============================
-save_data = {
+    save_data = {
 
         "User_ID": user_id,
         "Nitrogen": N,
