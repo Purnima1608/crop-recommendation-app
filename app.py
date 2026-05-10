@@ -1,23 +1,39 @@
+# ==============================
+# IMPORTS
+# ==============================
 import streamlit as st
 import numpy as np
 import pandas as pd
 import joblib
 import datetime
-import os
 import matplotlib.pyplot as plt
+import matplotlib
+import requests
+
+# ==============================
+# GOOGLE SHEET WEB APP URL
+# ==============================
+WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw2fwfs3VYVy4z-JjPFeQQUDDkZ6r3f2KFi_rRpYuD6Vhfu5-R2KHjjMP2wgraCDcQcdA/exec"
+
+# ==============================
+# FONT
+# ==============================
+matplotlib.rcParams['font.family'] = 'Mangal'
 
 # ==============================
 # CONFIG
 # ==============================
 st.set_page_config(page_title="Crop Recommendation", layout="centered")
+
 st.markdown("""
 <style>
+
 /* Main background */
 .stApp {
     background-color: #f5f7fa;
 }
 
-/* Sidebar (if you use it later) */
+/* Sidebar */
 [data-testid="stSidebar"] {
     background-color: #e6f0ff;
 }
@@ -34,30 +50,32 @@ h1, h2, h3 {
     border-radius: 8px;
 }
 
-/* Input boxes */
-.stNumberInput input {
+/* Labels */
 label {
     font-size: 18px !important;
     font-weight: 600;
 }
 
-/* Increase number input text */
+/* Number Input */
 .stNumberInput input {
+    font-size: 16px !important;
+    border-radius: 8px;
+}
+
+/* Slider */
+.stSlider span {
     font-size: 16px !important;
 }
 
-/* Increase slider value text */
-.stSlider span {
-    font-size: 16px !important;
-}    border-radius: 8px;
-}
 </style>
 """, unsafe_allow_html=True)
+
+# ==============================
+# LOAD MODEL
+# ==============================
 model = joblib.load("crop_model.pkl")
 scaler = joblib.load("scaler.pkl")
 le = joblib.load("label_encoder.pkl")
-
-log_file = "user_data1.csv"
 
 # ==============================
 # SESSION
@@ -68,26 +86,25 @@ if "lang" not in st.session_state:
 if "last_user" not in st.session_state:
     st.session_state.last_user = None
 
+if "show_feedback_form" not in st.session_state:
+    st.session_state.show_feedback_form = False
+
 # ==============================
-# LANGUAGE
+# LANGUAGE TEXTS
 # ==============================
 texts = {
+
     "English": {
         "title": "🌾 Crop Recommendation System",
         "button": "🌱 Get Recommendation",
         "result": "🌾 Top 3 Recommendations",
         "correct": "✅ Correct",
         "incorrect": "❌ Wrong",
-        "usage": "📊 System Analytics",
-
-        "dashboard": "📊 Dashboard",
         "pred": "Predictions",
         "correct_count": "Correct",
         "wrong_count": "Wrong",
-
         "soil": "Soil",
         "weather": "Weather",
-
         "nitrogen": "Nitrogen",
         "phosphorus": "Phosphorus",
         "potassium": "Potassium",
@@ -96,19 +113,15 @@ texts = {
         "boron": "Boron",
         "manganese": "Manganese",
         "copper": "Copper",
-
         "ph": "pH",
         "temp": "Temperature",
         "rain": "Rainfall",
         "humidity": "Humidity",
-
         "feedback": "👍 Feedback",
-        "first": " First Choice",
-        "second": " Second Choice",
-        "third": "Third Choice",
+        "Specify Reason": "Please tell reason",
+        "other_label": "Please specify:",
+        "submit": "Submit Feedback",
 
-        "Specify Reason": " Please tell reason",
-        
         "reasons": [
             "Wrong Soil Data",
             "Due to Weather Change",
@@ -118,9 +131,7 @@ texts = {
             "Due to Water Issue",
             "Due to Heavy Rainfall",
             "Other"
-        ],
-        "other_label": "Please specify:",
-        "submit": "Submit Feedback"
+        ]
     },
 
     "Hindi": {
@@ -129,16 +140,11 @@ texts = {
         "result": "🌾 शीर्ष 3 सिफारिशें",
         "correct": "✅ सही",
         "incorrect": "❌ गलत",
-        "usage": "📊 विश्लेषण",
-
-        "dashboard": "📊 डैशबोर्ड",
         "pred": "कुल भविष्यवाणी",
         "correct_count": "सही",
         "wrong_count": "गलत",
-
         "soil": "मिट्टी",
         "weather": "मौसम",
-
         "nitrogen": "नाइट्रोजन",
         "phosphorus": "फॉस्फोरस",
         "potassium": "पोटैशियम",
@@ -147,19 +153,16 @@ texts = {
         "boron": "बोरॉन",
         "manganese": "मैंगनीज",
         "copper": "कॉपर",
-
         "ph": "pH",
         "temp": "तापमान",
         "rain": "वर्षा",
         "humidity": "नमी",
-
         "feedback": "👍 फीडबैक",
-        "first": " पहला",
-        "second": " दूसरा",
-        "third": " तीसरा",
+        "Specify Reason": "⚠️ कारण बताएं",
+        "other_label": "कृपया बताएं:",
+        "submit": "फीडबैक सबमिट करें",
 
-        "Specify Reason": "⚠️ कारण बताएं" ,
-            "reasons": [
+        "reasons": [
             "गलत मिट्टी डेटा",
             "मौसम परिवर्तन",
             "उर्वरक के कारण",
@@ -168,9 +171,7 @@ texts = {
             "पानी की समस्या",
             "अत्यधिक वर्षा",
             "अन्य"
-        ],
-        "other_label": "कृपया बताएं:",
-        "submit": "फीडबैक सबमिट करें"
+        ]
     },
 
     "Gujarati": {
@@ -179,16 +180,11 @@ texts = {
         "result": "🌾 ટોચની 3 ભલામણ",
         "correct": "✅ સાચું",
         "incorrect": "❌ ખોટું",
-        "usage": "📊 વિશ્લેષણ",
-
-        "dashboard": "📊 ડેશબોર્ડ",
         "pred": "કુલ આગાહી",
         "correct_count": "સાચું",
         "wrong_count": "ખોટું",
-
         "soil": "જમીન",
         "weather": "હવામાન",
-
         "nitrogen": "નાઈટ્રોજન",
         "phosphorus": "ફોસ્ફરસ",
         "potassium": "પોટેશિયમ",
@@ -197,19 +193,16 @@ texts = {
         "boron": "બોરોન",
         "manganese": "મેંગેનીઝ",
         "copper": "કોપર",
-
         "ph": "pH",
         "temp": "તાપમાન",
         "rain": "વરસાદ",
         "humidity": "ભેજ",
-
         "feedback": "👍 પ્રતિસાદ",
-        "first": " પ્રથમ",
-        "second": " બીજું",
-        "third": " ત્રીજું",
+        "Specify Reason": "કારણ આપો",
+        "other_label": "કૃપા કરીને લખો:",
+        "submit": "પ્રતિસાદ મોકલો",
 
-        "Specify Reason": "કારણ આપો" , 
-            "reasons": [
+        "reasons": [
             "ખોટું જમીન ડેટા",
             "હવામાન બદલાવ",
             "ખાતર કારણે",
@@ -218,9 +211,7 @@ texts = {
             "પાણીની સમસ્યા",
             "ભારે વરસાદ",
             "અન્ય"
-        ],
-        "other_label": "કૃપા કરીને લખો:",
-        "submit": "પ્રતિસાદ મોકલો"
+        ]
     }
 }
 
@@ -265,101 +256,86 @@ lang = st.session_state.lang
 st.title(texts[lang]["title"])
 
 # ==============================
-# ANALYTICS SECTION
+# ANALYTICS
 # ==============================
+try:
 
-# ==============================
-# SYSTEM ANALYTICS (SIDE BY SIDE)
-# ==============================
+    response = requests.get(WEB_APP_URL)
+    records = response.json()
 
-
-# ==============================
-# SYSTEM ANALYTICS
-# ==============================
-
-if os.path.exists(log_file):
-
-    df = pd.read_csv(log_file)
+    df = pd.DataFrame(records)
 
     total = len(df)
-    correct = (df["Feedback"] == "Correct").sum()
-    wrong = (df["Feedback"] == "Wrong").sum()
 
-    # Create 2 columns
+    correct = 0
+    wrong = 0
+
+    if total > 0:
+        correct = (df["Feedback"] == "Correct").sum()
+        wrong = (df["Feedback"] == "Wrong").sum()
+
     col1, col2 = st.columns([1,1])
 
-    # LEFT SIDE → Metrics
     with col1:
         st.metric(texts[lang]["pred"], total)
         st.metric(texts[lang]["correct_count"], correct)
         st.metric(texts[lang]["wrong_count"], wrong)
 
-    # RIGHT SIDE → Pie Chart
     with col2:
 
         fig, ax = plt.subplots(figsize=(3,3))
 
-        # Prevent error when all values are zero
         if correct == 0 and wrong == 0:
 
             ax.text(
                 0.5,
                 0.5,
-                "No Feedback Data",
+                "No Feedback",
                 ha='center',
-                va='center',
-                fontsize=12
+                va='center'
             )
 
-            ax.axis('off')
+            ax.axis("off")
 
         else:
 
             ax.pie(
                 [correct, wrong],
-                labels=["Correct", "Wrong"],
+                labels=[
+                    texts[lang]["correct"],
+                    texts[lang]["incorrect"]
+                ],
                 autopct="%1.1f%%",
-                colors=["green", "red"],
-                wedgeprops={'edgecolor': 'white'}
+                colors=["green", "red"]
             )
 
         st.pyplot(fig)
 
-else:
-    st.info("No data yet")
-
-    
+except Exception as e:
+    st.error(f"Analytics Error: {e}")
 
 # ==============================
-# INPUT FUNCTION
+# DUAL INPUT
 # ==============================
 def dual_input(label, key, min_v, max_v, default):
 
-    # Main session value
     if key not in st.session_state:
         st.session_state[key] = default
 
-    # Slider session
     if f"{key}_slider" not in st.session_state:
         st.session_state[f"{key}_slider"] = default
 
-    # Input session
     if f"{key}_input" not in st.session_state:
         st.session_state[f"{key}_input"] = default
 
-    # When slider changes
     def sync_from_slider():
-        st.session_state[key] = st.session_state[f"{key}_slider"]
         st.session_state[f"{key}_input"] = st.session_state[f"{key}_slider"]
 
-    # When textbox changes
     def sync_from_input():
-        st.session_state[key] = st.session_state[f"{key}_input"]
         st.session_state[f"{key}_slider"] = st.session_state[f"{key}_input"]
 
     col1, col2 = st.columns([2,1])
 
-    # Slider
     col1.slider(
         label,
         min_v,
@@ -368,7 +344,6 @@ def dual_input(label, key, min_v, max_v, default):
         on_change=sync_from_slider
     )
 
-    # Textbox
     col2.number_input(
         "",
         min_v,
@@ -377,69 +352,77 @@ def dual_input(label, key, min_v, max_v, default):
         on_change=sync_from_input
     )
 
-    return st.session_state[key]
+    return st.session_state[f"{key}_slider"]
+
 # ==============================
 # INPUTS
 # ==============================
 st.subheader(texts[lang]["soil"])
 
-N = dual_input(texts[lang]["nitrogen"], "N", 0.0, 140.0, 20.0)
-P = dual_input(texts[lang]["phosphorus"], "P", 0.0, 60.0, 20.0)
-K = dual_input(texts[lang]["potassium"], "K", 0.0, 205.0, 5.0)
+N = dual_input(texts[lang]["nitrogen"], "N", 0.0, 140.0, 50.0)
+P = dual_input(texts[lang]["phosphorus"], "P", 0.0, 145.0, 50.0)
+K = dual_input(texts[lang]["potassium"], "K", 0.0, 205.0, 50.0)
 
-Zinc = dual_input(texts[lang]["zinc"], "Zn", 1.0, 5.0, 3.0)
-Iron = dual_input(texts[lang]["iron"], "Fe", 1.0, 30.0, 20.0)
-Boron = dual_input(texts[lang]["boron"], "B", 0.2, 2.0, 1.0)
-Manganese = dual_input(texts[lang]["manganese"], "Mn", 2.0, 20.0, 12.0)
+Zinc = dual_input(texts[lang]["zinc"], "Zn", 0.5, 5.0, 2.0)
+Iron = dual_input(texts[lang]["iron"], "Fe", 2.0, 25.0, 10.0)
+Boron = dual_input(texts[lang]["boron"], "B", 0.1, 2.0, 1.0)
+Manganese = dual_input(texts[lang]["manganese"], "Mn", 1.0, 15.0, 5.0)
 Copper = dual_input(texts[lang]["copper"], "Cu", 0.1, 2.0, 1.0)
 
 st.subheader(texts[lang]["weather"])
 
-pH = dual_input(texts[lang]["ph"], "pH", 0.0, 10.0, 4.0)
-Temp = dual_input(texts[lang]["temp"], "Temp", 0.0, 50.0, 25.0)
-Rain = dual_input(texts[lang]["rain"], "Rain", 0.0, 2500.0, 200.0)
-Hum = dual_input(texts[lang]["humidity"], "Hum", 0.0, 100.0, 50.0)
+pH = dual_input(texts[lang]["ph"], "pH", 4.0, 9.0, 7.0)
+Temp = dual_input(texts[lang]["temp"], "Temp", 10.0, 45.0, 25.0)
+Rain = dual_input(texts[lang]["rain"], "Rain", 20.0, 300.0, 100.0)
+Hum = dual_input(texts[lang]["humidity"], "Hum", 20.0, 100.0, 50.0)
 
-# ==============================
 # ==============================
 # PREDICTION
 # ==============================
 if st.button(texts[lang]["button"]):
 
-    if os.path.exists(log_file):
-        df = pd.read_csv(log_file)
-        user_id = f"User_{len(df)+1}"
-    else:
-        user_id = "User_1"
+    try:
+        response = requests.get(WEB_APP_URL)
+        records = response.json()
+        user_id = f"User_{len(records) + 1}"
+    except:
+        user_id = "User_67"
 
-    data = pd.DataFrame([[N,P,K,Zinc,Iron,Boron,Manganese,Copper,pH,Temp,Rain,Hum]],
-                        columns=scaler.feature_names_in_)
+    data_input = pd.DataFrame(
+        [[N,P,K,Zinc,Iron,Boron,Manganese,Copper,pH,Temp,Rain,Hum]],
+        columns=scaler.feature_names_in_
+    )
 
-    scaled = scaler.transform(data)
+    scaled = scaler.transform(data_input)
 
     probs = model.predict_proba(scaled)[0]
+
     idx = np.argsort(probs)[-3:][::-1]
+
     crops = le.inverse_transform(idx)
 
     top_prob = probs[idx[0]]
+
     percentages = [(p/top_prob)*100 for p in probs[idx]]
 
     st.success(texts[lang]["result"])
 
-    # ✅ CREATE VARIABLES (YOU MISSED THIS)
     crop_names = [translate_crop(c) for c in crops]
-    perc_values = [round(p, 1) for p in percentages]
 
-    # ✅ BAR CHART (MUST BE INSIDE BUTTON BLOCK)
+    perc_values = [round(p,1) for p in percentages]
+
     fig, ax = plt.subplots(figsize=(10,4))
 
-    bars = ax.barh(crop_names, perc_values, 
-                   color=["green", "blue", "orange"])
+    ax.barh(
+        crop_names,
+        perc_values,
+        color=["green","blue","orange"]
+    )
 
     ax.set_xlabel("Confidence (%)")
+
     ax.set_title("Top Crop Recommendations")
 
-    # Show percentage on bars
     for i, v in enumerate(perc_values):
         ax.text(v + 2, i, f"{v}%", va='center')
 
@@ -447,9 +430,11 @@ if st.button(texts[lang]["button"]):
 
     st.pyplot(fig)
 
+    # ==============================
+    # SAVE TO GOOGLE SHEET
+    # ==============================
+    save_data = {
 
-
-    new = pd.DataFrame([{
         "User_ID": user_id,
         "Nitrogen": N,
         "Phosphorus": P,
@@ -467,53 +452,58 @@ if st.button(texts[lang]["button"]):
         "Prediction2": crops[1],
         "Prediction3": crops[2],
         "Feedback": "Pending",
-        "Time": datetime.datetime.now()
-    }])
+        "Reason": "",
+        "Time": str(datetime.datetime.now())
+    }
 
-    if os.path.exists(log_file):
-        old = pd.read_csv(log_file)
-        new = pd.concat([old, new], ignore_index=True)
-
-    new.to_csv(log_file, index=False)
+    requests.post(WEB_APP_URL, json=save_data)
 
     st.session_state.last_user = user_id
 
 # ==============================
 # FEEDBACK
 # ==============================
+# FEEDBACK
 # ==============================
-# FEEDBACK SECTION
-# ==============================
-# ==============================
-# FEEDBACK SECTION
-# ==============================
-
 st.divider()
-st.markdown(f"## {texts[lang]['feedback']}")
 
-# ✅ MUST be at top (only once in full app)
-if "show_feedback_form" not in st.session_state:
-    st.session_state.show_feedback_form = False
+st.markdown(f"## {texts[lang]['feedback']}")
 
 if st.session_state.last_user:
 
     col1, col2 = st.columns(2)
 
-    # ✅ CORRECT BUTTON
-    if col1.button(texts[lang]["correct"], key="correct_btn"):
-        df = pd.read_csv(log_file)
-        df.loc[df["User_ID"] == st.session_state.last_user, "Feedback"] = "Correct"
-        df.to_csv(log_file, index=False)
+    # ==============================
+    # CORRECT BUTTON
+    # ==============================
+    if col1.button(texts[lang]["correct"]):
+
+        feedback_data = {
+
+            "User_ID": st.session_state.last_user,
+            "Feedback": "Correct",
+            "Reason": ""
+
+        }
+
+        requests.post(WEB_APP_URL, json=feedback_data)
 
         st.success("Feedback Stored ✅")
+
         st.session_state.show_feedback_form = False
+
         st.rerun()
 
-    # ✅ INCORRECT BUTTON
-    if col2.button(texts[lang]["incorrect"], key="wrong_btn"):
+    # ==============================
+    # WRONG BUTTON
+    # ==============================
+    if col2.button(texts[lang]["incorrect"]):
+
         st.session_state.show_feedback_form = True
 
-# ✅ SHOW FORM (OUTSIDE button block)
+# ==============================
+# FEEDBACK FORM
+# ==============================
 if st.session_state.show_feedback_form:
 
     st.warning(texts[lang]["Specify Reason"])
@@ -523,35 +513,40 @@ if st.session_state.show_feedback_form:
     selected = []
 
     for i, reason in enumerate(reasons):
+
         if st.checkbox(reason, key=f"reason_{i}"):
+
             selected.append(reason)
 
-    # ✅ FIX: MOVE THIS INSIDE
-    other_text = ""
+    # Other textbox
     if reasons[-1] in selected:
-        other_text = st.text_input(texts[lang]["other_label"], key="other_text")
+
+        other_text = st.text_input(texts[lang]["other_label"])
+
         if other_text:
             selected.append(other_text)
 
-    reason_list = selected
+    # ==============================
+    # SUBMIT BUTTON
+    # ==============================
+    if st.button(texts[lang]["submit"]):
 
-    # ✅ SUBMIT BUTTON
-    if st.button(texts[lang]["submit"], key="submit_btn"):
+        feedback_data = {
 
-        if len(reason_list) == 0:
-            st.error("Please select at least one reason")
-        else:
-            df = pd.read_csv(log_file)
+            "User_ID": st.session_state.last_user,
+            "Feedback": "Wrong",
+            "Reason": ", ".join(selected)
 
-            df.loc[df["User_ID"] == st.session_state.last_user, "Feedback"] = "Wrong"
-            df.loc[df["User_ID"] == st.session_state.last_user, "Reason"] = ", ".join(reason_list)
+        }
 
-            df.to_csv(log_file, index=False)
+        requests.post(WEB_APP_URL, json=feedback_data)
 
-            st.success("Feedback Recorded ✅")
+        st.success("Feedback Recorded ✅")
 
-            st.session_state.show_feedback_form = False
-            st.rerun()
+        st.session_state.show_feedback_form = False
+
+        st.rerun()
 
 else:
+
     st.info("Make prediction first")
