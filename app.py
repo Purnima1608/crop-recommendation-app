@@ -14,7 +14,14 @@ import requests
 # GOOGLE SHEET WEB APP URL
 # ==============================
 WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw2fwfs3VYVy4z-JjPFeQQUDDkZ6r3f2KFi_rRpYuD6Vhfu5-R2KHjjMP2wgraCDcQcdA/exec"
+# CACHE GOOGLE SHEET DATA
+# ==============================
+@st.cache_data(ttl=30)
+def get_sheet_data():
 
+    response = requests.get(WEB_APP_URL, timeout=5)
+
+    return response.json()
 # ==============================
 # FONT
 # ==============================
@@ -73,9 +80,16 @@ label {
 # ==============================
 # LOAD MODEL
 # ==============================
-model = joblib.load("crop_model.pkl")
-scaler = joblib.load("scaler.pkl")
-le = joblib.load("label_encoder.pkl")
+@st.cache_resource
+def load_models():
+
+    model = joblib.load("crop_model.pkl")
+    scaler = joblib.load("scaler.pkl")
+    le = joblib.load("label_encoder.pkl")
+
+    return model, scaler, le
+
+model, scaler, le = load_models()
 
 # ==============================
 # SESSION
@@ -238,15 +252,15 @@ c1, c2, c3 = st.columns(3)
 
 if c1.button("English"):
     st.session_state.lang = "English"
-    st.rerun()
+    
 
 if c2.button("हिंदी"):
     st.session_state.lang = "Hindi"
-    st.rerun()
+    
 
 if c3.button("ગુજરાતી"):
     st.session_state.lang = "Gujarati"
-    st.rerun()
+    
 
 lang = st.session_state.lang
 
@@ -260,8 +274,7 @@ st.title(texts[lang]["title"])
 # ==============================
 try:
 
-    response = requests.get(WEB_APP_URL)
-    records = response.json()
+    records = get_sheet_data()
 
     df = pd.DataFrame(records)
 
@@ -302,8 +315,8 @@ try:
             ax.pie(
                 [correct, wrong],
                 labels=[
-                    texts[lang]["correct"],
-                    texts[lang]["incorrect"]
+                    "Correct",
+                    "Incorrect"
                 ],
                 autopct="%1.1f%%",
                 colors=["green", "red"]
@@ -382,8 +395,7 @@ Hum = dual_input(texts[lang]["humidity"], "Hum", 20.0, 100.0, 50.0)
 if st.button(texts[lang]["button"]):
 
     try:
-        response = requests.get(WEB_APP_URL)
-        records = response.json()
+        records = get_sheet_data()
         user_id = f"User_{len(records) + 1}"
     except:
         user_id = "User_67"
@@ -469,11 +481,13 @@ if st.button(texts[lang]["button"]):
         "Reason": "",
         "Time": str(datetime.datetime.now())
     }
-
-    requests.post(WEB_APP_URL, json=save_data)
+    try:
+        requests.post(WEB_APP_URL, json=save_data, timeout=3)
+    except:
+        pass        
 
     st.session_state.last_user = user_id
-
+    st.session_state.show_feedback_form = False
 # ==============================
 # FEEDBACK
 # ==============================
@@ -499,14 +513,15 @@ if st.session_state.last_user:
             "Reason": ""
 
         }
+        
+        with st.spinner("Saving feedback..."):
 
-        requests.post(WEB_APP_URL, json=feedback_data)
+            requests.post(WEB_APP_URL, json=feedback_data, timeout=3)
+        #requests.post(WEB_APP_URL, json=feedback_data,timeout=5)
 
         st.success("Feedback Stored ✅")
 
         st.session_state.show_feedback_form = False
-
-        st.rerun()
 
     # ==============================
     # WRONG BUTTON
@@ -553,13 +568,13 @@ if st.session_state.show_feedback_form:
 
         }
 
-        requests.post(WEB_APP_URL, json=feedback_data)
+        with st.spinner("Saving feedback..."):
+
+            requests.post(WEB_APP_URL, json=feedback_data,timeout=5)
 
         st.success("Feedback Recorded ✅")
 
         st.session_state.show_feedback_form = False
-
-        st.rerun()
 
 else:
 
