@@ -407,28 +407,42 @@ if st.button(texts[lang]["button"]):
 
     st.success(texts[lang]["result"])
 
-    crop_names = [translate_crop(c) for c in crops]
+    translated_crop_names = [translate_crop(c) for c in crops]
+
+    # Use English names in graph
+    crop_names = crops
 
     perc_values = [round(p,1) for p in percentages]
 
-    fig, ax = plt.subplots(figsize=(10,4))
+    fig, ax = plt.subplots(figsize=(9,4))
 
-    ax.barh(
+    bars = ax.barh(
         crop_names,
         perc_values,
         color=["green","blue","orange"]
     )
 
-    ax.set_xlabel("Confidence (%)")
+    # ax.set_xlabel("Confidence (%)")
 
-    ax.set_title("Top Crop Recommendations")
-
+    ax.set_title("Top Crop Recommendations", fontsize=16)
+    ax.set_xlim(0, 110)
     for i, v in enumerate(perc_values):
-        ax.text(v + 2, i, f"{v}%", va='center')
+        ax.text(v + 2, i, f"{v}%", va='center', fontsize=9)
 
     ax.invert_yaxis()
 
     st.pyplot(fig)
+
+    # ==============================
+# SHOW TRANSLATED NAMES
+# ==============================
+    if lang != "English":
+
+        st.markdown("### 🌾 Recommended Crops")
+        cols = st.columns(3)
+        for i, crop in enumerate(translated_crop_names):
+
+            st.write(f"{i+1}. {crop} ({perc_values[i]:.1f}%)")
 
     # ==============================
     # SAVE TO GOOGLE SHEET
